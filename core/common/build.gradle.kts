@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.unifile)
     implementation(libs.libarchive)
 
+    implementation(platform(kotlinx.coroutines.bom))
     api(kotlinx.coroutines.core)
     api(kotlinx.serialization.json)
     api(kotlinx.serialization.json.okio)
