@@ -188,6 +188,8 @@ dependencies {
     implementation(projects.coreMetadata)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)
+    implementation(projects.zeus)
+    implementation(projects.sourceInternal)
     implementation(projects.data)
     implementation(projects.domain)
     implementation(projects.presentationCore)

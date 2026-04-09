@@ -6,6 +6,8 @@ import eu.kanade.tachiyomi.animesource.AnimeSource
 import eu.kanade.tachiyomi.animesource.online.AnimeHttpSource
 import eu.kanade.tachiyomi.data.download.anime.AnimeDownloadManager
 import eu.kanade.tachiyomi.extension.anime.AnimeExtensionManager
+import eu.kanade.tachiyomi.source.internal.InternalSourceAdapter
+import eu.kanade.tachiyomi.source.internal.InternalSourceRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -68,6 +70,10 @@ class AndroidAnimeSourceManager(
                             mutableMap[it.id] = it
                             registerStubSource(StubAnimeSource.from(it))
                         }
+                    }
+                    InternalSourceRegistry.getAll().forEach { internalSource ->
+                        val adapter = InternalSourceAdapter(internalSource)
+                        mutableMap[adapter.id] = adapter
                     }
                     sourcesMapFlow.value = mutableMap
                     _isInitialized.value = true

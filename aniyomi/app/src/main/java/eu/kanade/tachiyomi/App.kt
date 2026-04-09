@@ -42,6 +42,8 @@ import eu.kanade.tachiyomi.di.AppModule
 import eu.kanade.tachiyomi.di.PreferenceModule
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
+import eu.kanade.tachiyomi.zeus.ZeusDL
+import eu.kanade.tachiyomi.zeus.ZeusInitializer
 import eu.kanade.tachiyomi.ui.base.delegate.SecureActivityDelegate
 import eu.kanade.tachiyomi.util.system.DeviceUtil
 import eu.kanade.tachiyomi.util.system.GLUtil
@@ -102,6 +104,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         // SY -->
         Injekt.importModule(SYDomainModule())
         // SY <--
+
+        ZeusInitializer.init(this, ZeusDL(this))
 
         setupNotificationChannels()
 
