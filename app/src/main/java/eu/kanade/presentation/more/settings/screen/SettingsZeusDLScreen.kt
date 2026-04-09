@@ -56,19 +56,19 @@ object SettingsZeusDLScreen : Screen() {
         ) { contentPadding ->
             ScrollbarLazyColumn(contentPadding = contentPadding) {
                 item {
-                    Preference.PreferenceItem.InfoPreference(
+                    Preference.PreferenceItem.TextPreference(
                         title = "Installed version",
                         subtitle = manager.currentVersion(),
                     )
                 }
                 item {
-                    Preference.PreferenceItem.InfoPreference(
+                    Preference.PreferenceItem.TextPreference(
                         title = "Architecture",
                         subtitle = "${manager.currentArch()} (device: ${ZeusArch.current().suffix})",
                     )
                 }
                 item {
-                    Preference.PreferenceItem.InfoPreference(
+                    Preference.PreferenceItem.TextPreference(
                         title = "Update status",
                         subtitle = updateState.label(),
                     )
