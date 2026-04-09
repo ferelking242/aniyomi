@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.animesource.model.SEpisode
 import eu.kanade.tachiyomi.animesource.model.Video
 import eu.kanade.tachiyomi.source.internal.model.Anime
 import eu.kanade.tachiyomi.source.internal.model.Episode
+import rx.Observable
 
 class InternalSourceAdapter(
     private val delegate: InternalSource,
@@ -70,6 +71,18 @@ class InternalSourceAdapter(
     override suspend fun getSeasonList(anime: SAnime): List<SAnime> = emptyList()
 
     override fun getFilterList(): AnimeFilterList = AnimeFilterList()
+
+    @Deprecated("Use the non-RxJava API instead", ReplaceWith("getPopularAnime"))
+    override fun fetchPopularAnime(page: Int): Observable<AnimesPage> =
+        throw UnsupportedOperationException("Use getPopularAnime instead")
+
+    @Deprecated("Use the non-RxJava API instead", ReplaceWith("getSearchAnime"))
+    override fun fetchSearchAnime(page: Int, query: String, filters: AnimeFilterList): Observable<AnimesPage> =
+        throw UnsupportedOperationException("Use getSearchAnime instead")
+
+    @Deprecated("Use the non-RxJava API instead", ReplaceWith("getLatestUpdates"))
+    override fun fetchLatestUpdates(page: Int): Observable<AnimesPage> =
+        throw UnsupportedOperationException("Use getLatestUpdates instead")
 
     override fun toString(): String = "$name (${lang.uppercase()}) [internal]"
 
