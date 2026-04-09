@@ -12,6 +12,7 @@ dependencies {
     implementation(platform(kotlinx.coroutines.bom))
     implementation(kotlinx.coroutines.core)
     implementation(kotlinx.serialization.json)
+    implementation(androidx.corektx)
     api(libs.logcat)
     implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }
