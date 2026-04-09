@@ -22,6 +22,17 @@ class ZeusDL(private val context: Context) {
         File(context.filesDir, "zeus/zeusdl")
     }
 
+    private val assetArch: String by lazy {
+        val supported = android.os.Build.SUPPORTED_ABIS.toList()
+        when {
+            "arm64-v8a" in supported -> "arm64-v8a"
+            "armeabi-v7a" in supported -> "armeabi-v7a"
+            "x86_64" in supported -> "x86_64"
+            "x86" in supported -> "x86"
+            else -> "arm64-v8a"
+        }
+    }
+
     suspend fun ensureInstalled() = withContext(Dispatchers.IO) {
         val dir = binaryFile.parentFile ?: return@withContext
         if (!dir.exists()) dir.mkdirs()
@@ -32,14 +43,21 @@ class ZeusDL(private val context: Context) {
     }
 
     private fun copyBinaryFromAssets() {
-        val assetName = "zeus/zeusdl"
-        context.assets.open(assetName).use { input ->
+        val assetName = "zeus/$assetArch/zeusdl"
+        val fallbackAssetName = "zeus/zeusdl"
+        val source = try {
+            context.assets.open(assetName)
+        } catch (_: Exception) {
+            logcat(LogPriority.WARN) { "Arch-specific asset not found ($assetArch), falling back to universal" }
+            context.assets.open(fallbackAssetName)
+        }
+        source.use { input ->
             binaryFile.outputStream().use { output ->
                 input.copyTo(output)
             }
         }
         binaryFile.setExecutable(true, false)
-        logcat { "ZeusDL binary installed at ${binaryFile.absolutePath}" }
+        logcat { "ZeusDL binary installed from assets ($assetArch) → ${binaryFile.absolutePath}" }
     }
 
     suspend fun extract(url: String): ZeusResult = withContext(Dispatchers.IO) {

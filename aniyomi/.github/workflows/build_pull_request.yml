@@ -1,4 +1,5 @@
 name: PR build check
+
 on:
   pull_request:
     paths:
@@ -13,13 +14,15 @@ on:
       - 'i18n/src/commonMain/moko-resources/base/plurals-aniyomi.xml'
       - 'i18n/src/commonMain/moko-resources/base/plurals.xml'
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
+
+env:
+  ZEUS_REPO: aniyomiorg/zeusdl
 
 jobs:
   build:
@@ -41,6 +44,57 @@ jobs:
 
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
+
+      - name: Download ZeusDL binaries from release
+        env:
+          ZEUS_PAT: ${{ secrets.ZEUS_GITHUB_PAT }}
+        run: |
+          set -e
+
+          RELEASE_JSON=$(curl -sf \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
+            "https://api.github.com/repos/$ZEUS_REPO/releases/latest")
+
+          ZEUS_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+          echo "ZeusDL version: $ZEUS_VERSION"
+
+          for ARCH in arm64-v8a armeabi-v7a x86_64 x86; do
+            DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
+              ".assets[] | select(.name | contains(\"$ARCH\")) | select(.name | endswith(\".sha256\") | not) | .browser_download_url")
+
+            if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+              echo "No binary found for $ARCH — skipping"
+              continue
+            fi
+
+            DEST="app/src/main/assets/zeus/$ARCH"
+            mkdir -p "$DEST"
+
+            echo "Downloading $ARCH from $DOWNLOAD_URL"
+            curl -sfL \
+              ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
+              -o "$DEST/zeusdl" \
+              "$DOWNLOAD_URL"
+            chmod +x "$DEST/zeusdl"
+
+            SHA_URL=$(echo "$RELEASE_JSON" | jq -r \
+              ".assets[] | select(.name | contains(\"$ARCH\")) | select(.name | endswith(\".sha256\")) | .browser_download_url")
+
+            if [ -n "$SHA_URL" ] && [ "$SHA_URL" != "null" ]; then
+              EXPECTED=$(curl -sfL \
+                ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
+                "$SHA_URL" | awk '{print $1}')
+              ACTUAL=$(sha256sum "$DEST/zeusdl" | awk '{print $1}')
+              if [ "$EXPECTED" = "$ACTUAL" ]; then
+                echo "  SHA256 OK for $ARCH"
+              else
+                echo "  SHA256 MISMATCH for $ARCH (expected $EXPECTED, got $ACTUAL)"
+                exit 1
+              fi
+            fi
+          done
 
       - name: Check code format
         run: ./gradlew spotlessCheck
