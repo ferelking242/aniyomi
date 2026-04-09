@@ -81,6 +81,11 @@ object Notifications {
     const val ID_UPDATES_TO_EXTS = -401
     const val ID_EXTENSION_INSTALLER = -402
 
+    const val CHANNEL_ZEUS_UPDATE = "zeus_update_channel"
+    const val ID_ZEUS_UPDATE = -901
+    const val ID_ZEUS_DOWNLOAD_PROGRESS = -902
+    const val ID_ZEUS_UPDATE_ERROR = -903
+
     private val deprecatedChannels = listOf(
         "downloader_channel",
         "downloader_complete_channel",
@@ -171,6 +176,10 @@ object Notifications {
                 buildNotificationChannel(CHANNEL_EXTENSIONS_UPDATE, IMPORTANCE_DEFAULT) {
                     setGroup(GROUP_APK_UPDATES)
                     setName(context.stringResource(MR.strings.channel_ext_updates))
+                },
+                buildNotificationChannel(CHANNEL_ZEUS_UPDATE, IMPORTANCE_DEFAULT) {
+                    setGroup(GROUP_APK_UPDATES)
+                    setName("ZeusDL updates")
                 },
             ),
         )

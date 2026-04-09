@@ -82,6 +82,7 @@ import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.io.File
+import eu.kanade.presentation.more.settings.screen.SettingsZeusDLScreen
 
 object SettingsAdvancedScreen : SearchableSettings {
 
@@ -143,6 +144,7 @@ object SettingsAdvancedScreen : SearchableSettings {
             // SY -->
             getDataSaverGroup(),
             // SY <--
+            getZeusDLGroup(),
         )
     }
 
@@ -554,4 +556,19 @@ object SettingsAdvancedScreen : SearchableSettings {
         )
     }
     // SY <--
+
+    @Composable
+    private fun getZeusDLGroup(): Preference.PreferenceGroup {
+        val navigator = LocalNavigator.currentOrThrow
+        return Preference.PreferenceGroup(
+            title = "ZeusDL",
+            preferenceItems = persistentListOf(
+                Preference.PreferenceItem.TextPreference(
+                    title = "ZeusDL settings",
+                    subtitle = "Binary version, updates, and authentication",
+                    onClick = { navigator.push(SettingsZeusDLScreen) },
+                ),
+            ),
+        )
+    }
 }
