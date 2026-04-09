@@ -14,11 +14,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  ZEUS_REPO: aniyomiorg/zeusdl
+  ZEUS_REPO: ferelking242/zeusdl
 
 jobs:
   build:
-    name: Build all variants
+    name: Build arm64-v8a debug
     runs-on: ubuntu-latest
 
     steps:
@@ -34,78 +34,62 @@ jobs:
       - name: Set up gradle
         uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
 
-      - name: Download ZeusDL binaries from release
+      - name: Download ZeusDL binary (arm64-v8a)
         env:
           ZEUS_PAT: ${{ secrets.ZEUS_GITHUB_PAT }}
         run: |
+          set -e
+
           RELEASE_JSON=$(curl -sf \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
-            "https://api.github.com/repos/$ZEUS_REPO/releases/latest" 2>/dev/null) || {
-            echo "Could not fetch ZeusDL releases (repo may be private or unavailable) — skipping"
-            exit 0
-          }
+            -H "Authorization: Bearer $ZEUS_PAT" \
+            "https://api.github.com/repos/$ZEUS_REPO/releases/latest")
 
-          ZEUS_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name // empty')
-          if [ -z "$ZEUS_VERSION" ]; then
-            echo "No ZeusDL release found — skipping"
-            exit 0
-          fi
+          ZEUS_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
           echo "ZeusDL version: $ZEUS_VERSION"
 
-          for ARCH in arm64-v8a armeabi-v7a x86_64 x86; do
-            DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
-              ".assets[] | select(.name | contains(\"$ARCH\")) | select(.name | endswith(\".sha256\") | not) | .browser_download_url")
+          DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
+            '.assets[] | select(.name == "zeusdl-android-arm64") | .browser_download_url')
 
-            if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
-              echo "No binary found for $ARCH — skipping"
-              continue
+          SHA_URL=$(echo "$RELEASE_JSON" | jq -r \
+            '.assets[] | select(.name == "zeusdl-android-arm64.sha256") | .browser_download_url')
+
+          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+            echo "ERROR: Could not find zeusdl-android-arm64 asset in release $ZEUS_VERSION"
+            exit 1
+          fi
+
+          DEST="app/src/main/assets/zeus/arm64-v8a"
+          mkdir -p "$DEST"
+
+          echo "Downloading from $DOWNLOAD_URL"
+          curl -sfL \
+            -H "Authorization: Bearer $ZEUS_PAT" \
+            -o "$DEST/zeusdl" \
+            "$DOWNLOAD_URL"
+          chmod +x "$DEST/zeusdl"
+
+          if [ -n "$SHA_URL" ] && [ "$SHA_URL" != "null" ]; then
+            EXPECTED=$(curl -sfL -H "Authorization: Bearer $ZEUS_PAT" "$SHA_URL" | awk '{print $1}')
+            ACTUAL=$(sha256sum "$DEST/zeusdl" | awk '{print $1}')
+            if [ "$EXPECTED" = "$ACTUAL" ]; then
+              echo "SHA256 OK"
+            else
+              echo "SHA256 MISMATCH (expected $EXPECTED, got $ACTUAL)"
+              exit 1
             fi
-
-            DEST="app/src/main/assets/zeus/$ARCH"
-            mkdir -p "$DEST"
-
-            echo "Downloading $ARCH from $DOWNLOAD_URL"
-            curl -sfL \
-              ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
-              -o "$DEST/zeusdl" \
-              "$DOWNLOAD_URL"
-            chmod +x "$DEST/zeusdl"
-
-            SHA_URL=$(echo "$RELEASE_JSON" | jq -r \
-              ".assets[] | select(.name | contains(\"$ARCH\")) | select(.name | endswith(\".sha256\")) | .browser_download_url")
-
-            if [ -n "$SHA_URL" ] && [ "$SHA_URL" != "null" ]; then
-              EXPECTED=$(curl -sfL \
-                ${ZEUS_PAT:+-H "Authorization: Bearer $ZEUS_PAT"} \
-                "$SHA_URL" | awk '{print $1}')
-              ACTUAL=$(sha256sum "$DEST/zeusdl" | awk '{print $1}')
-              if [ "$EXPECTED" = "$ACTUAL" ]; then
-                echo "  SHA256 OK for $ARCH"
-              else
-                echo "  SHA256 MISMATCH for $ARCH (expected $EXPECTED, got $ACTUAL)"
-                exit 1
-              fi
-            fi
-          done
+          fi
 
           echo "ZEUS_VERSION=$ZEUS_VERSION" >> $GITHUB_ENV
+          echo "ZeusDL downloaded successfully to $DEST/zeusdl"
+          ls -lh "$DEST/zeusdl"
 
-      - name: Build release (all architectures)
-        run: ./gradlew assembleRelease
+      - name: Build debug (arm64-v8a only)
+        run: ./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
 
-      - name: Build debug (all architectures)
-        run: ./gradlew assembleDebug
-
-      - name: Upload release APKs
+      - name: Upload debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: release-apks-${{ github.sha }}
-          path: app/build/outputs/apk/release/*.apk
-
-      - name: Upload debug APKs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: debug-apks-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          name: debug-arm64-v8a-${{ github.sha }}
+          path: app/build/outputs/apk/debug/app-arm64-v8a-debug.apk
