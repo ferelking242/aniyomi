@@ -9,6 +9,7 @@ android {
 }
 
 dependencies {
+    implementation(platform(kotlinx.coroutines.bom))
     implementation(kotlinx.coroutines.core)
     implementation(kotlinx.serialization.json)
     api(libs.logcat)
