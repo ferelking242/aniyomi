@@ -1,103 +1,105 @@
 name: Build All Architectures
 
-on:
-  push:
-    branches:
-      - '*'
-  pull_request:
-    branches:
-      - '*'
-  workflow_dispatch:
+  on:
+    push:
+      branches:
+        - '*'
+    pull_request:
+      branches:
+        - '*'
+    workflow_dispatch:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
 
-env:
-  ZEUS_REPO: ferelking242/zeusdl
+  env:
+    ZEUS_REPO: ferelking242/zeusdl
 
-jobs:
-  build:
-    name: Build arm64-v8a debug
-    runs-on: ubuntu-latest
+  jobs:
+    build:
+      name: Build arm64-v8a debug
+      runs-on: ubuntu-latest
 
-    steps:
-      - name: Clone repo
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      steps:
+        - name: Clone repo
+          uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Set up JDK
-        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
-        with:
-          java-version: 17
-          distribution: temurin
+        - name: Set up JDK
+          uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+          with:
+            java-version: 17
+            distribution: temurin
 
-      - name: Set up gradle
-        uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
+        - name: Set up gradle
+          uses: gradle/actions/setup-gradle@94baf225fe0a508e581a564467443d0e2379123b # v4.3.0
 
-      - name: Download ZeusDL binary (arm64-v8a)
-        env:
-          ZEUS_PAT: ${{ secrets.ZEUS_GITHUB_PAT }}
-        run: |
-          set -e
+        - name: Download ZeusDL binary (arm64-v8a)
+          env:
+            ZEUS_PAT: ${{ secrets.ZEUS_GITHUB_PAT }}
+          run: |
+            set -e
 
-          RELEASE_JSON=$(curl -sf \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            -H "Authorization: Bearer $ZEUS_PAT" \
-            "https://api.github.com/repos/$ZEUS_REPO/releases/latest")
+            RELEASE_JSON=$(curl -sf \
+              -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -H "Authorization: Bearer $ZEUS_PAT" \
+              "https://api.github.com/repos/$ZEUS_REPO/releases/latest")
 
-          ZEUS_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
-          echo "ZeusDL version: $ZEUS_VERSION"
+            ZEUS_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+            echo "ZeusDL version: $ZEUS_VERSION"
 
-          DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
-            '.assets[] | select(.name == "zeusdl-android-arm64") | .browser_download_url')
+            DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r \
+              '.assets[] | select(.name == "zeusdl-android-arm64") | .browser_download_url')
 
-          SHA_URL=$(echo "$RELEASE_JSON" | jq -r \
-            '.assets[] | select(.name == "zeusdl-android-arm64.sha256") | .browser_download_url')
+            SHA_URL=$(echo "$RELEASE_JSON" | jq -r \
+              '.assets[] | select(.name == "zeusdl-android-arm64.sha256") | .browser_download_url')
 
-          if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
-            echo "ERROR: Could not find zeusdl-android-arm64 asset in release $ZEUS_VERSION"
-            exit 1
-          fi
-
-          DEST="app/src/main/assets/zeus/arm64-v8a"
-          mkdir -p "$DEST"
-
-          echo "Downloading from $DOWNLOAD_URL"
-          curl -sfL \
-            -H "Authorization: Bearer $ZEUS_PAT" \
-            -o "$DEST/zeusdl" \
-            "$DOWNLOAD_URL"
-          chmod +x "$DEST/zeusdl"
-
-          if [ -n "$SHA_URL" ] && [ "$SHA_URL" != "null" ]; then
-            EXPECTED=$(curl -sfL -H "Authorization: Bearer $ZEUS_PAT" "$SHA_URL" | awk '{print $1}')
-            ACTUAL=$(sha256sum "$DEST/zeusdl" | awk '{print $1}')
-            if [ "$EXPECTED" = "$ACTUAL" ]; then
-              echo "SHA256 OK"
-            else
-              echo "SHA256 MISMATCH (expected $EXPECTED, got $ACTUAL)"
+            if [ -z "$DOWNLOAD_URL" ] || [ "$DOWNLOAD_URL" = "null" ]; then
+              echo "ERROR: Could not find zeusdl-android-arm64 asset in release $ZEUS_VERSION"
               exit 1
             fi
-          fi
 
-          echo "ZEUS_VERSION=$ZEUS_VERSION" >> $GITHUB_ENV
-          echo "ZeusDL downloaded successfully to $DEST/zeusdl"
-          ls -lh "$DEST/zeusdl"
+            DEST="app/src/main/assets/zeus/arm64-v8a"
+            mkdir -p "$DEST"
 
-      - name: Build debug (arm64-v8a only)
-        run: ./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
+            echo "Downloading from $DOWNLOAD_URL"
+            curl -sfL \
+              -H "Authorization: Bearer $ZEUS_PAT" \
+              -o "$DEST/zeusdl" \
+              "$DOWNLOAD_URL"
+            chmod +x "$DEST/zeusdl"
 
-      - name: Find APK output
+            if [ -n "$SHA_URL" ] && [ "$SHA_URL" != "null" ]; then
+              EXPECTED=$(curl -sfL -H "Authorization: Bearer $ZEUS_PAT" "$SHA_URL" | awk '{print $1}')
+              ACTUAL=$(sha256sum "$DEST/zeusdl" | awk '{print $1}')
+              if [ "$EXPECTED" = "$ACTUAL" ]; then
+                echo "SHA256 OK"
+              else
+                echo "SHA256 MISMATCH (expected $EXPECTED, got $ACTUAL)"
+                exit 1
+              fi
+            fi
+
+            echo "ZEUS_VERSION=$ZEUS_VERSION" >> $GITHUB_ENV
+            echo "ZeusDL downloaded successfully to $DEST/zeusdl"
+            ls -lh "$DEST/zeusdl"
+
+        - name: Build debug (arm64-v8a only)
+          run: ./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
+
+        - name: Find APK output
           if: always()
           run: |
-            echo "=== app/build/outputs/ tree ==="
-            find app/build/outputs -name "*.apk" 2>/dev/null || echo "No APKs found"
+            echo "=== APK files in build output ==="
+            find app/build/outputs -name "*.apk" 2>/dev/null || echo "No APKs found in app/build/outputs"
+            echo "=== Directories ==="
             find app/build/outputs -type d 2>/dev/null | head -30
 
         - name: Upload debug APK
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: debug-arm64-v8a-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
+          uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          with:
+            name: debug-arm64-v8a-${{ github.sha }}
+            path: app/build/outputs/apk/debug/*.apk
+            if-no-files-found: error
+  
