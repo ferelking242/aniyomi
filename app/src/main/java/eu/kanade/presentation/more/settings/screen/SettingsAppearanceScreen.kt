@@ -11,6 +11,7 @@ import androidx.core.app.ActivityCompat
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.ui.UiPreferences
+import eu.kanade.domain.ui.model.DockStyle
 import eu.kanade.domain.ui.model.NavStyle
 import eu.kanade.domain.ui.model.StartScreen
 import eu.kanade.domain.ui.model.TabletUiMode
