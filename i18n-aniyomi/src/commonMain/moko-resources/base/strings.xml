@@ -377,8 +377,8 @@
     <string name="chapters_episodes">Chapters and episodes</string>
     <string name="episodes">Episodes</string>
     <string name="backup_settings_warning">Warning: Backing up settings will store your track passwords as well, do not share this backup file!</string>
-    <string name="label_manga_library">Manga</string>
-    <string name="label_anime_library">Anime</string>
+    <string name="label_manga_library">Lecture</string>
+    <string name="label_anime_library">Vidéo</string>
     <string name="label_anime">Anime</string>
     <string name="label_manga">Manga</string>
     <string name="label_recent_anime_updates">Anime Updates</string>
@@ -582,4 +582,20 @@
     <string name="pref_download_fillermarked_items">Allow downloading of fillermarked episodes</string>
     <string name="show_episode_previews">Episode thumbnails</string>
     <string name="show_episode_summaries">Episode summaries</string>
-</resources>
+
+      <!-- Vidéo/Lecture/LN library labels -->
+      <string name="label_ln_library">LN</string>
+      <!-- Dock style -->
+      <string name="pref_dock_style">Style du dock</string>
+      <string name="pref_dock_style_normal">Normal</string>
+      <string name="pref_dock_style_floating">Flottant</string>
+      <string name="pref_dock_style_floating_center">Flottant centré</string>
+      <!-- ZeusDL -->
+      <string name="pref_zeusdl_version">Version ZeusDL</string>
+      <string name="pref_check_zeusdl_update">Vérifier les mises à jour ZeusDL</string>
+      <string name="pref_zeusdl_update_checking">Vérification en cours…</string>
+      <string name="pref_zeusdl_up_to_date">ZeusDL est à jour</string>
+      <string name="pref_zeusdl_update_available">Mise à jour ZeusDL disponible</string>
+      <!-- NavStyle: LN -->
+      <string name="pref_bottom_nav_no_ln">Déplacer LN vers Plus</string>
+  </resources>
