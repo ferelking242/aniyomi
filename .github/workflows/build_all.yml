@@ -78,19 +78,9 @@ jobs:
       - name: Build debug (arm64-v8a only)
         run: ./gradlew assembleDebug -Pandroid.injected.build.abi=arm64-v8a
 
-      - name: Find APK output
-        if: always()
-        run: |
-          echo "=== All APK files in workspace ==="
-          find . -name "*.apk" -not -path "*/.gradle/*" -not -path "*/caches/*" 2>/dev/null || echo "No APKs found anywhere"
-          echo "=== app/build tree ==="
-          ls -la app/build/ 2>/dev/null || echo "app/build missing"
-          echo "=== app/build/outputs tree ==="
-          find app/build/outputs -mindepth 0 2>/dev/null | head -50 || echo "no outputs dir"
-
       - name: Upload debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: debug-arm64-v8a-${{ github.sha }}
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/intermediates/apk/debug/*.apk
           if-no-files-found: error
